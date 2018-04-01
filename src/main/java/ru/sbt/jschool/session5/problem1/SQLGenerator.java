@@ -6,7 +6,7 @@ import java.lang.reflect.Field;
 /**
  */
 public class SQLGenerator {
-    private String WriterPK (Field[] fields){
+    private String writerPK (Field[] fields){
         String result = "";
         int pkCounter = 0;
         for (int i = 0; i <fields.length ; i++){
@@ -26,6 +26,32 @@ public class SQLGenerator {
                     tmp = f.getName().toLowerCase();
                 }
                 result = result + tmp + " = ?";
+            }
+        }
+        return result;
+    }
+
+    private String writerCOL (Field[] fields, boolean flag){
+        String result = "";
+        int colCounter = 0;
+        for (int i = 0; i <fields.length ; i++){
+            Field f = fields[i];
+            Annotation a = f.getAnnotation(Column.class);
+            if((a!=null)&&(colCounter!=0))
+            {
+                result = result + ", ";
+            }
+            if(a!=null){
+                colCounter++;
+                String tmp;
+                if(!f.getAnnotation(Column.class).name().equals("")) {
+                    tmp = f.getAnnotation(Column.class).name().toLowerCase();
+                }
+                else{
+                    tmp = f.getName().toLowerCase();
+                }
+                if(flag) result = result + tmp + " = ?";
+                else result = result + tmp;
             }
         }
         return result;
@@ -78,28 +104,9 @@ public class SQLGenerator {
         String result = "UPDATE ";
         result = result + clazz.getAnnotation(Table.class).name()+" SET ";
         Field[] fields = clazz.getDeclaredFields();
-        int colCounter = 0;
-        for (int i = 0; i <fields.length ; i++){
-            Field f = fields[i];
-            Annotation a = f.getAnnotation(Column.class);
-            if((a!=null)&&(colCounter!=0))
-            {
-                result = result + ", ";
-            }
-            if(a!=null){
-                colCounter++;
-                String tmp;
-                if(!f.getAnnotation(Column.class).name().equals("")) {
-                    tmp = f.getAnnotation(Column.class).name().toLowerCase();
-                }
-                else{
-                    tmp = f.getName().toLowerCase();
-                }
-                result = result + tmp + " = ?";
-            }
-        }
+        result = result + writerCOL(fields, true);
         result = result + " WHERE ";
-        result = result + WriterPK(fields);
+        result = result + writerPK(fields);
         return result;
     }
 
@@ -107,36 +114,17 @@ public class SQLGenerator {
         String result = "DELETE FROM ";
         result = result + clazz.getAnnotation(Table.class).name()+" WHERE ";
         Field[] fields = clazz.getDeclaredFields();
-        result = result + WriterPK(fields);
+        result = result + writerPK(fields);
         return result;
     }
 
     public <T> String select(Class<T> clazz) {
         String result = "SELECT ";
         Field[] fields = clazz.getDeclaredFields();
-        int colCounter = 0;
-        for (int i = 0; i <fields.length ; i++){
-            Field f = fields[i];
-            Annotation a = f.getAnnotation(Column.class);
-            if((a!=null)&&(colCounter!=0))
-            {
-                result = result + ", ";
-            }
-            if(a!=null){
-                colCounter++;
-                String tmp;
-                if(!f.getAnnotation(Column.class).name().equals("")) {
-                    tmp = f.getAnnotation(Column.class).name().toLowerCase();
-                }
-                else{
-                    tmp = f.getName().toLowerCase();
-                }
-                result = result + tmp;
-            }
-        }
+        result = result + writerCOL(fields, false);
         result = result + " FROM ";
         result = result + clazz.getAnnotation(Table.class).name()+" WHERE ";
-        result = result + WriterPK(fields);
+        result = result + writerPK(fields);
         return result;
     }
 
